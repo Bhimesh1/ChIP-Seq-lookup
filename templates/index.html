@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+    <title>ChIP-Seq Similarity Lookup</title>
+</head>
+<body>
+    <h1>Upload Your BED File</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <input type="submit" value="Compare">
+    </form>
+
+    {% if results %}
+    <h2>Top Matches</h2>
+    <ul>
+        {% for name, score in results %}
+        <li>{{ name }} — Similarity: {{ score|round(4) }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>
