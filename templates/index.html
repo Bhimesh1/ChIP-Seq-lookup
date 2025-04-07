@@ -14,9 +14,11 @@
     <h2>Top Matches</h2>
     <ul>
         {% for name, score in results %}
-        <li>{{ name }} — Similarity: {{ score|round(4) }}</li>
+        <li><strong>{{ name }}</strong> — Similarity: {{ score | round(4) }}</li>
         {% endfor %}
     </ul>
+    {% elif request.method == 'POST' %}
+    <p>No matches found or similarity scores are zero.</p>
     {% endif %}
 </body>
 </html>

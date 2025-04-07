@@ -4,16 +4,17 @@ import os
 app = Flask(__name__)
 
 # this is a function to read a BED file and return the intervals as tuples
-def read_bed(file_path):
+def read_bed(file_obj):
     intervals = []
-    with open(file_path) as f:
-        for line in f:
-            if line.startswith('#') or line.strip() == '':
-                continue
-            parts = line.strip().split('\t')
-            if len(parts) >= 3:
-                chrom, start, end = parts[0], int(parts[1]), int(parts[2])
-                intervals.append((chrom, start, end))
+    for line in file_obj:
+        if isinstance(line, bytes):
+            line = line.decode('utf-8')  # decode if coming from upload
+        if line.startswith('#') or line.strip() == '':
+            continue
+        parts = line.strip().split('\t')
+        if len(parts) >= 3:
+            chrom, start, end = parts[0], int(parts[1]), int(parts[2])
+            intervals.append((chrom, start, end))
     return intervals
 
 # this function calculates the Jaccard index between the two lists of intervals
@@ -39,25 +40,33 @@ def index():
     results = []
     if request.method == 'POST':
         uploaded_file = request.files['file']
-        if uploaded_file:
-            # Reads uploaded BED
-            user_intervals = read_bed(uploaded_file)
+        print("File uploaded!")
 
-            # Reads each database BED and compares
+        if uploaded_file:
+            # Read the uploaded file
+            user_intervals = read_bed(uploaded_file)
+            print(f"User BED has {len(user_intervals)} intervals")
+
+            # Process each database BED file
             db_dir = 'static'
             scores = []
             for filename in os.listdir(db_dir):
                 if filename.endswith('.bed'):
                     db_path = os.path.join(db_dir, filename)
-                    db_intervals = read_bed(db_path)
+                    print(f"Reading database file: {filename}")
+                    with open(db_path, 'r') as f:
+                        db_intervals = read_bed(f)
+                    print(f"{filename} has {len(db_intervals)} intervals")
                     score = jaccard_index(user_intervals, db_intervals)
+                    print(f"Jaccard score with {filename}: {score}")
                     scores.append((filename, score))
 
-            # Sorts by Jaccard score
             scores.sort(key=lambda x: x[1], reverse=True)
-            results = scores[:3]  # top 3 matches
+            results = scores[:3]
+            print("Comparison complete. Top results:", results)
 
     return render_template('index.html', results=results)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
